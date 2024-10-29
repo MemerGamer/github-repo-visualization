@@ -86,9 +86,13 @@ const GitHubUserSearch: React.FC = () => {
         };
 
         repositories.forEach((repo) => {
-            const size = repo.commits + repo.languages.length * 10 + 20;
+            const size = repo.commits*2 + repo.languages.length * 10 + 20;
             elements.push({
-                data: { id: repo.name, label: repo.name, size },
+                data: {
+                    id: repo.name,
+                    label: `${repo.name}\n\nCommits: ${repo.commits}\nNr. of languages: ${repo.languages.length}`,
+                    size
+                },
             });
 
             repo.languages.forEach((tech) => {
@@ -130,6 +134,8 @@ const GitHubUserSearch: React.FC = () => {
                         'background-color': '#007acc',
                         label: 'data(label)',
                         'text-valign': 'center',
+                        'text-wrap': 'wrap',
+                        'text-max-width': '100px',
                         color: '#fff',
                         'font-size': '12px',
                         width: 'data(size)',
