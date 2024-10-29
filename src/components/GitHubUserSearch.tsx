@@ -110,7 +110,7 @@ const GitHubUserSearch: React.FC = () => {
                     selector: 'edge',
                     style: {
                         width: 1,
-                        'line-color':'#ddd',
+                        'line-color': '#ddd',
                         'curve-style': 'unbundled-bezier',
                         label: 'data(label)',
                         'font-size': '10px',
@@ -122,11 +122,12 @@ const GitHubUserSearch: React.FC = () => {
             ],
             layout: {
                 name: 'cose',
-                // idealEdgeLength: () => 100,
-                padding: 20,
-                animate: true,
-                componentSpacing: 40,
-                nestingFactor: 0.5
+                idealEdgeLength: () => 150,
+                nodeRepulsion: () => 5000,
+                padding: 30,
+                animate: false,
+                componentSpacing: 100,
+                nestingFactor: 0.7,
             },
         });
 
@@ -134,7 +135,7 @@ const GitHubUserSearch: React.FC = () => {
     }, [repositories]);
 
     return (
-        <div className="flex flex-col items-center p-6 h-screen w-screen bg-gray-900 transition-colors duration-300`">
+        <div className="flex flex-col items-center p-6 h-screen w-screen bg-gray-900 transition-colors duration-300">
             <div className="flex justify-center w-full max-w-lg mb-4">
                 <h1 className='text-white text-lg align-middle justify-center p-2'>GitHub Username:</h1>
                 <input
