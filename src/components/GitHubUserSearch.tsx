@@ -13,6 +13,7 @@ const GitHubUserSearch: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [layout, setLayout] = useState<string>('cose');
     const cyRef = useRef<HTMLDivElement>(null);
+    const [techColors, setTechColors] = useState<Map<string, string>>(new Map());
 
     const handleSearch = async () => {
         setError(null);
@@ -60,6 +61,16 @@ const GitHubUserSearch: React.FC = () => {
 
         const elements: cytoscape.ElementDefinition[] = [];
         const techMap = new Map<string, string[]>();
+        const colors = new Map<string, string>();
+
+        const getRandomColor = () => {
+            const letters = '0123456789ABCDEF';
+            let color = '#';
+            for (let i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        };
 
         repositories.forEach((repo) => {
             elements.push({
@@ -69,10 +80,13 @@ const GitHubUserSearch: React.FC = () => {
             repo.languages.forEach((tech) => {
                 if (!techMap.has(tech)) {
                     techMap.set(tech, []);
+                    colors.set(tech, getRandomColor());
                 }
                 techMap.get(tech)!.push(repo.name);
             });
         });
+
+        setTechColors(colors);
 
         techMap.forEach((repos, tech) => {
             if (repos.length > 1) {
@@ -85,6 +99,7 @@ const GitHubUserSearch: React.FC = () => {
                                 target: repos[j],
                                 label: tech,
                             },
+                            classes: tech,
                         });
                     }
                 }
@@ -120,15 +135,15 @@ const GitHubUserSearch: React.FC = () => {
                         'text-background-shape': 'roundrectangle',
                     },
                 },
+                ...Array.from(colors.entries()).map(([tech, color]) => ({
+                    selector: `edge.${tech}`,
+                    style: {
+                        'line-color': color,
+                    },
+                })),
             ],
             layout: {
                 name: layout,
-                // idealEdgeLength: () => 150,
-                // nodeRepulsion: () => 5000,
-                // padding: 30,
-                // animate: false,
-                // componentSpacing: 100,
-                // nestingFactor: 0.7,
             },
         });
 
@@ -175,6 +190,18 @@ const GitHubUserSearch: React.FC = () => {
                 className="rounded-2xl flex-grow w-full mt-6 h-full bg-gray-800"
                 style={{ minHeight: '400px' }}
             ></div>
+
+            {/* Put on top of the graph and align to the right */}
+            <div className="absolute top-28 right-0 mt-4 mr-4 text-white max-h-96 bg-gray-900 bg-opacity-75 rounded-xl p-2 overflow-y-auto">
+                <h2 className="text-lg mb-2">Legend:</h2>
+                <ul>
+                    {Array.from(techColors.entries()).map(([tech, color]) => (
+                        <li key={tech} style={{ color }}>
+                            {tech}
+                        </li>
+                    ))}
+                </ul>
+            </div>
         </div>
     );
 };
