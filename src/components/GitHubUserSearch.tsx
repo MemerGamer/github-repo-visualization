@@ -136,6 +136,7 @@ const GitHubUserSearch: React.FC = () => {
     return (
         <div className="flex flex-col items-center p-6 h-screen w-screen bg-gray-900 transition-colors duration-300`">
             <div className="flex justify-center w-full max-w-lg mb-4">
+                <h1 className='text-white text-lg align-middle justify-center p-2'>GitHub Username:</h1>
                 <input
                     type="text"
                     placeholder="Enter GitHub username"
