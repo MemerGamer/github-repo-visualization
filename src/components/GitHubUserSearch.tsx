@@ -122,9 +122,11 @@ const GitHubUserSearch: React.FC = () => {
             ],
             layout: {
                 name: 'cose',
-                idealEdgeLength: () => 100,
+                // idealEdgeLength: () => 100,
                 padding: 20,
                 animate: true,
+                componentSpacing: 40,
+                nestingFactor: 0.5
             },
         });
 
