@@ -86,7 +86,7 @@ const GitHubUserSearch: React.FC = () => {
         };
 
         repositories.forEach((repo) => {
-            const size = repo.commits*2 + repo.languages.length * 10 + 20;
+            const size = repo.commits * 2 + repo.languages.length * 10 + 20;
             elements.push({
                 data: {
                     id: repo.name,
@@ -140,6 +140,7 @@ const GitHubUserSearch: React.FC = () => {
                         'font-size': '12px',
                         width: 'data(size)',
                         height: 'data(size)',
+                        opacity: 1  // Start with full opacity
                     },
                 },
                 {
@@ -153,6 +154,7 @@ const GitHubUserSearch: React.FC = () => {
                         'text-background-color': '#fff',
                         'text-background-opacity': 1,
                         'text-background-shape': 'roundrectangle',
+                        opacity: 1  // Start with full opacity
                     },
                 },
                 ...Array.from(colors.entries()).map(([tech, color]) => ({
@@ -168,8 +170,27 @@ const GitHubUserSearch: React.FC = () => {
             },
         });
 
+        // Mouseover and Mouseout Events
+        cy.on('mouseover', 'node', (event) => {
+            const node = event.target;
+
+            // Dim all other nodes and edges
+            cy.elements().not(node).not(node.connectedEdges()).style({ opacity: 0.1 });
+
+            // Highlight the selected node and its edges
+            node.style({ opacity: 1 });
+            node.connectedEdges().style({ opacity: 1 });
+            node.connectedEdges().connectedNodes().style({ opacity: 1 });
+        });
+
+        cy.on('mouseout', 'node', () => {
+            // Reset all elements to full opacity
+            cy.elements().style({ opacity: 1 });
+        });
+
         return () => cy.destroy();
     }, [repositories, layout]);
+
 
     return (
         <div className="flex flex-col items-center p-6 h-screen w-screen bg-gray-900 transition-colors duration-300">
