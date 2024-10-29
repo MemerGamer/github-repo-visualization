@@ -5,6 +5,7 @@ import cytoscape from 'cytoscape';
 interface Repository {
     name: string;
     languages: string[];
+    commits: number;
 }
 
 const GitHubUserSearch: React.FC = () => {
@@ -42,9 +43,21 @@ const GitHubUserSearch: React.FC = () => {
                         }
                     );
                     const languages = Object.keys(languagesResponse.data);
+
+                    const commitsResponse = await axios.get(
+                        `${import.meta.env.VITE_GITHUB_API_URL}/repos/${username}/${repo.name}/commits`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${import.meta.env.VITE_GITHUB_API_KEY}`,
+                            },
+                        }
+                    );
+                    const commits = commitsResponse.data.length;
+
                     return {
                         name: repo.name,
                         languages,
+                        commits,
                     };
                 })
             );
@@ -73,8 +86,9 @@ const GitHubUserSearch: React.FC = () => {
         };
 
         repositories.forEach((repo) => {
+            const size = repo.commits + repo.languages.length * 10 + 20;
             elements.push({
-                data: { id: repo.name, label: repo.name, size: repo.languages.length * 10 + 20 },
+                data: { id: repo.name, label: repo.name, size },
             });
 
             repo.languages.forEach((tech) => {
