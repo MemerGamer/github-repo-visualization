@@ -1,10 +1,12 @@
-function App() {
+import React from 'react';
+import GitHubUserSearch from './components/GitHubUserSearch';
 
+const App: React.FC = () => {
   return (
-    <h1 className="text-3xl font-bold underline">
-      Hello world!
-    </h1>
-  )
-}
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <GitHubUserSearch />
+    </div>
+  );
+};
 
-export default App
+export default App;

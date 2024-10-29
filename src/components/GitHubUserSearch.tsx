@@ -1,0 +1,162 @@
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+import cytoscape from 'cytoscape';
+
+interface Repository {
+    name: string;
+    languages: string[];
+}
+
+const GitHubUserSearch: React.FC = () => {
+    const [username, setUsername] = useState<string>('');
+    const [repositories, setRepositories] = useState<Repository[]>([]);
+    const [error, setError] = useState<string | null>(null);
+    const cyRef = useRef<HTMLDivElement>(null);
+
+    const handleSearch = async () => {
+        setError(null);
+        setRepositories([]);
+        if (!username) return;
+
+        try {
+            const reposResponse = await axios.get(
+                `${import.meta.env.VITE_GITHUB_API_URL}/users/${username}/repos`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${import.meta.env.VITE_GITHUB_API_KEY}`,
+                    },
+                }
+            );
+
+            const repoData: Repository[] = await Promise.all(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                reposResponse.data.map(async (repo: any) => {
+                    const languagesResponse = await axios.get(
+                        `${import.meta.env.VITE_GITHUB_API_URL}/repos/${username}/${repo.name}/languages`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${import.meta.env.VITE_GITHUB_API_KEY}`,
+                            },
+                        }
+                    );
+                    const languages = Object.keys(languagesResponse.data);
+                    return {
+                        name: repo.name,
+                        languages,
+                    };
+                })
+            );
+
+            setRepositories(repoData);
+        } catch (error) {
+            setError('Error fetching repositories or technologies.');
+            console.error(error);
+        }
+    };
+
+    useEffect(() => {
+        if (repositories.length === 0 || !cyRef.current) return;
+
+        const elements: cytoscape.ElementDefinition[] = [];
+        const techMap = new Map<string, string[]>();
+
+        repositories.forEach((repo) => {
+            elements.push({
+                data: { id: repo.name, label: repo.name, size: repo.languages.length * 10 + 20 },
+            });
+
+            repo.languages.forEach((tech) => {
+                if (!techMap.has(tech)) {
+                    techMap.set(tech, []);
+                }
+                techMap.get(tech)!.push(repo.name);
+            });
+        });
+
+        techMap.forEach((repos, tech) => {
+            if (repos.length > 1) {
+                for (let i = 0; i < repos.length; i++) {
+                    for (let j = i + 1; j < repos.length; j++) {
+                        elements.push({
+                            data: {
+                                id: `${repos[i]}-${repos[j]}`,
+                                source: repos[i],
+                                target: repos[j],
+                                label: tech,
+                            },
+                        });
+                    }
+                }
+            }
+        });
+
+        const cy = cytoscape({
+            container: cyRef.current,
+            elements,
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'background-color': '#007acc',
+                        label: 'data(label)',
+                        'text-valign': 'center',
+                        color: '#fff',
+                        'font-size': '12px',
+                        width: 'data(size)',
+                        height: 'data(size)',
+                    },
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        width: 1,
+                        'line-color': '#ddd',
+                        'curve-style': 'unbundled-bezier',
+                        label: 'data(label)',
+                        'font-size': '10px',
+                        'text-background-color': '#fff',
+                        'text-background-opacity': 1,
+                        'text-background-shape': 'roundrectangle',
+                    },
+                },
+            ],
+            layout: {
+                name: 'cose',
+                idealEdgeLength: function(){ return 100; },
+                padding: 20,
+                animate: true,
+
+            },
+        });
+
+        return () => cy.destroy();
+    }, [repositories]);
+
+    return (
+        <div className="flex flex-col items-center p-6 h-screen w-screen">
+            <input
+                type="text"
+                placeholder="Enter GitHub username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+                onClick={handleSearch}
+                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            >
+                Search
+            </button>
+
+            {error && <p className="mt-4 text-red-500">{error}</p>}
+
+            <div
+                ref={cyRef}
+                className="rounded-lg flex-grow w-full mt-6 h-full"
+                style={{ minHeight: '400px' }}
+            ></div>
+        </div>
+    );
+};
+
+export default GitHubUserSearch;
