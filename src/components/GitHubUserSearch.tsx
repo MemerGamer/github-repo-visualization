@@ -110,7 +110,7 @@ const GitHubUserSearch: React.FC = () => {
                     selector: 'edge',
                     style: {
                         width: 1,
-                        'line-color': '#ddd',
+                        'line-color':'#ddd',
                         'curve-style': 'unbundled-bezier',
                         label: 'data(label)',
                         'font-size': '10px',
@@ -122,10 +122,9 @@ const GitHubUserSearch: React.FC = () => {
             ],
             layout: {
                 name: 'cose',
-                idealEdgeLength: function(){ return 100; },
+                idealEdgeLength: () => 100,
                 padding: 20,
                 animate: true,
-
             },
         });
 
@@ -133,26 +132,28 @@ const GitHubUserSearch: React.FC = () => {
     }, [repositories]);
 
     return (
-        <div className="flex flex-col items-center p-6 h-screen w-screen">
-            <input
-                type="text"
-                placeholder="Enter GitHub username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <button
-                onClick={handleSearch}
-                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-            >
-                Search
-            </button>
+        <div className="flex flex-col items-center p-6 h-screen w-screen bg-gray-900 transition-colors duration-300`">
+            <div className="flex justify-center w-full max-w-lg mb-4">
+                <input
+                    type="text"
+                    placeholder="Enter GitHub username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="p-2 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-gray-200"
+                />
+                <button
+                    onClick={handleSearch}
+                    className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                >
+                    Search
+                </button>
+            </div>
 
-            {error && <p className="mt-4 text-red-500">{error}</p>}
+            {error && <p className="mt-4 text-red-400">{error}</p>}
 
             <div
                 ref={cyRef}
-                className="rounded-lg flex-grow w-full mt-6 h-full"
+                className="rounded-2xl flex-grow w-full mt-6 h-full bg-gray-800"
                 style={{ minHeight: '400px' }}
             ></div>
         </div>
