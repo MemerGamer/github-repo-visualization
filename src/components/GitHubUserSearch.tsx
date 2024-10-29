@@ -11,6 +11,7 @@ const GitHubUserSearch: React.FC = () => {
     const [username, setUsername] = useState<string>('');
     const [repositories, setRepositories] = useState<Repository[]>([]);
     const [error, setError] = useState<string | null>(null);
+    const [layout, setLayout] = useState<string>('cose');
     const cyRef = useRef<HTMLDivElement>(null);
 
     const handleSearch = async () => {
@@ -121,18 +122,18 @@ const GitHubUserSearch: React.FC = () => {
                 },
             ],
             layout: {
-                name: 'cose',
-                idealEdgeLength: () => 150,
-                nodeRepulsion: () => 5000,
-                padding: 30,
-                animate: false,
-                componentSpacing: 100,
-                nestingFactor: 0.7,
+                name: layout,
+                // idealEdgeLength: () => 150,
+                // nodeRepulsion: () => 5000,
+                // padding: 30,
+                // animate: false,
+                // componentSpacing: 100,
+                // nestingFactor: 0.7,
             },
         });
 
         return () => cy.destroy();
-    }, [repositories]);
+    }, [repositories, layout]);
 
     return (
         <div className="flex flex-col items-center p-6 h-screen w-screen bg-gray-900 transition-colors duration-300">
@@ -151,6 +152,20 @@ const GitHubUserSearch: React.FC = () => {
                 >
                     Search
                 </button>
+
+                <h1 className='text-white text-lg align-middle justify-center p-2'>Graph Layout:</h1>
+                <select
+                    title='layout-select'
+                    value={layout}
+                    onChange={(e) => setLayout(e.target.value)}
+                    className="ml-2 p-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200"
+                >
+                    <option value="cose">Cose</option>
+                    <option value="grid">Grid</option>
+                    <option value="breadthfirst">Breadthfirst</option>
+                    <option value="concentric">Concentric</option>
+                    <option value="circle">Circle</option>
+                </select>
             </div>
 
             {error && <p className="mt-4 text-red-400">{error}</p>}
