@@ -139,6 +139,7 @@ const GitHubUserSearch: React.FC = () => {
                     selector: `edge.${tech}`,
                     style: {
                         'line-color': color,
+                        'text-background-color': color,
                     },
                 })),
             ],
