@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Repository } from '../types';
 import GraphComponent from './GraphComponent';
@@ -8,12 +8,11 @@ import LanguageListComponent from './LanguageListComponent';
 import SkeletonLoader from './SkeletonLoader';
 
 const GitHubUserSearch: React.FC = () => {
-    const { usernameParam, layoutParam } = useParams<{ usernameParam: string; layoutParam: string }>();
     const navigate = useNavigate();
-    const [username, setUsername] = useState<string>(usernameParam || '');
+    const [username, setUsername] = useState<string>('');
     const [repositories, setRepositories] = useState<Repository[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [layout, setLayout] = useState<string>(layoutParam || 'grid');
+    const [layout, setLayout] = useState<string>('grid');
     const [loading, setLoading] = useState<boolean>(false);
     const cyRef = useRef<HTMLDivElement>(null);
     const [techColors, setTechColors] = useState<Map<string, string>>(new Map());
@@ -135,12 +134,6 @@ const GitHubUserSearch: React.FC = () => {
             setLoading(false);
         }
     }, [username, updateRoute, getRandomUniqueColor]);
-
-    useEffect(() => {
-        if (usernameParam) {
-            handleSearch();
-        }
-    }, [usernameParam, handleSearch]);
 
     return (
         <div className="flex flex-col items-center p-6 h-screen w-screen bg-gray-900 transition-colors duration-300">
