@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom'; // import useParams for URL params
 import axios from 'axios';
 import { Repository } from '../types';
 import GraphComponent from './GraphComponent';
@@ -9,10 +9,11 @@ import SkeletonLoader from './SkeletonLoader';
 
 const GitHubUserSearch: React.FC = () => {
     const navigate = useNavigate();
-    const [username, setUsername] = useState<string>('');
+    const { usernameParam, layoutParam } = useParams(); // Retrieve parameters from URL
+    const [username, setUsername] = useState<string>(usernameParam || ''); // Initialize with URL username
     const [repositories, setRepositories] = useState<Repository[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [layout, setLayout] = useState<string>('grid');
+    const [layout, setLayout] = useState<string>(layoutParam || 'grid'); // Initialize with URL layout
     const [loading, setLoading] = useState<boolean>(false);
     const cyRef = useRef<HTMLDivElement>(null);
     const [techColors, setTechColors] = useState<Map<string, string>>(new Map());
@@ -134,6 +135,13 @@ const GitHubUserSearch: React.FC = () => {
             setLoading(false);
         }
     }, [username, updateRoute, getRandomUniqueColor]);
+
+    // Trigger the search when the component mounts if usernameParam is present
+    useEffect(() => {
+        if (usernameParam) {
+            handleSearch(); // Call handleSearch to fetch data based on URL param
+        }
+    }, [usernameParam, handleSearch]);
 
     return (
         <div className="flex flex-col items-center p-6 h-screen w-screen bg-gray-900 transition-colors duration-300">
