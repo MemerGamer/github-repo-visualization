@@ -18,6 +18,7 @@ const GitHubUserSearch: React.FC = () => {
     const [techColors, setTechColors] = useState<Map<string, string>>(new Map());
     const [languageUsage, setLanguageUsage] = useState<Map<string, number>>(new Map());
     const [hiddenLanguages, setHiddenLanguages] = useState<Set<string>>(new Set());
+    const usedColors = useRef<Set<string>>(new Set());
 
     const handleSearch = async () => {
         setError(null);
@@ -76,12 +77,12 @@ const GitHubUserSearch: React.FC = () => {
 
             setRepositories(repoData);
 
-            // Set tech colors after repositories are fetched
             const colors = new Map<string, string>();
+            usedColors.current.clear();
             repoData.forEach((repo) => {
                 repo.languages.forEach((tech) => {
                     if (!colors.has(tech)) {
-                        colors.set(tech, getRandomColor());
+                        colors.set(tech, getRandomUniqueColor());
                     }
                 });
             });
@@ -91,6 +92,15 @@ const GitHubUserSearch: React.FC = () => {
             setError('Error fetching repositories or technologies.');
             console.error(error);
         }
+    };
+
+    const getRandomUniqueColor = () => {
+        let color;
+        do {
+            color = getRandomColor();
+        } while (usedColors.current.has(color));
+        usedColors.current.add(color);
+        return color;
     };
 
     const getRandomColor = () => {
@@ -270,7 +280,7 @@ const GitHubUserSearch: React.FC = () => {
 
                 <div className='flex flex-col ml-4 w-1/6'>
                     <div className="text-white h-1/2 bg-gray-800 rounded-xl p-4 overflow-y-auto">
-                        <h2 className="text-lg mb-2">Technologies <br></br> (Nr. of repos using):</h2>
+                        <h2 className="text-lg mb-2">Languages <br></br> (Nr. of repos using):</h2>
                         <ul>
                             {Array.from(techColors.entries()).map(([tech, color]) => (
                                 <li key={tech} style={{ color }}>
