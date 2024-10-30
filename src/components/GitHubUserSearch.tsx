@@ -17,6 +17,7 @@ const GitHubUserSearch: React.FC = () => {
     const [repositories, setRepositories] = useState<Repository[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [layout, setLayout] = useState<string>(layoutParam || 'grid');
+    const [loading, setLoading] = useState<boolean>(false);
     const cyRef = useRef<HTMLDivElement>(null);
     const [techColors, setTechColors] = useState<Map<string, string>>(new Map());
     const [languageUsage, setLanguageUsage] = useState<Map<string, number>>(new Map());
@@ -49,7 +50,11 @@ const GitHubUserSearch: React.FC = () => {
         setError(null);
         setRepositories([]);
         setLanguageUsage(new Map());
-        if (!username) return;
+        setLoading(true);
+        if (!username) {
+            setLoading(false);
+            return;
+        }
 
         try {
             const reposResponse = await axios.get(
@@ -117,6 +122,8 @@ const GitHubUserSearch: React.FC = () => {
         } catch (error) {
             setError('Error fetching repositories or technologies.');
             console.error(error);
+        } finally {
+            setLoading(false);
         }
     }, [username, updateRoute, getRandomUniqueColor]);
 
@@ -300,43 +307,49 @@ const GitHubUserSearch: React.FC = () => {
 
             {error && <p className="mt-4 text-red-400">{error}</p>}
 
-            <div className="flex w-full h-[85vh]">
-                <div
-                    ref={cyRef}
-                    className="rounded-2xl flex-grow mtb-6 h-full bg-gray-800"
-                    style={{ minHeight: '400px' }}
-                ></div>
+            {loading ? (
+                <div className="flex w-full h-[85vh] justify-center items-center">
+                    <div className="w-16 h-16 border-4 border-blue-500 border-dotted rounded-full animate-spin"></div>
+                </div>
+            ) : (
+                <div className="flex w-full h-[85vh]">
+                    <div
+                        ref={cyRef}
+                        className="rounded-2xl flex-grow mtb-6 h-full bg-gray-800"
+                        style={{ minHeight: '400px' }}
+                    ></div>
 
-                <div className='flex flex-col ml-4 w-1/6'>
-                    <div className="text-white h-1/2 bg-gray-800 rounded-xl p-4 overflow-y-auto">
-                        <h2 className="text-lg mb-2">Languages <br></br> (Nr. of repos using):</h2>
-                        <ul>
-                            {Array.from(techColors.entries()).map(([tech, color]) => (
-                                <li key={tech} style={{ color }}>
-                                    {tech} ({languageUsage.get(tech) || 0})
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                    <div className="text-white h-1/2 bg-gray-800 rounded-xl p-4 overflow-y-auto mt-4">
-                        <h2 className="text-lg mt-4 mb-2">Hide Languages:</h2>
-                        <ul>
-                            {Array.from(languageUsage.keys()).map((language) => (
-                                <li key={language}>
-                                    <label>
-                                        <input
-                                            type="checkbox"
-                                            checked={hiddenLanguages.has(language)}
-                                            onChange={() => toggleLanguageVisibility(language)}
-                                        />
-                                        {language}
-                                    </label>
-                                </li>
-                            ))}
-                        </ul>
+                    <div className='flex flex-col ml-4 w-1/6'>
+                        <div className="text-white h-1/2 bg-gray-800 rounded-xl p-4 overflow-y-auto">
+                            <h2 className="text-lg mb-2">Languages <br></br> (Nr. of repos using):</h2>
+                            <ul>
+                                {Array.from(techColors.entries()).map(([tech, color]) => (
+                                    <li key={tech} style={{ color }}>
+                                        {tech} ({languageUsage.get(tech) || 0})
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="text-white h-1/2 bg-gray-800 rounded-xl p-4 overflow-y-auto mt-4">
+                            <h2 className="text-lg mt-4 mb-2">Hide Languages:</h2>
+                            <ul>
+                                {Array.from(languageUsage.keys()).map((language) => (
+                                    <li key={language}>
+                                        <label>
+                                            <input
+                                                type="checkbox"
+                                                checked={hiddenLanguages.has(language)}
+                                                onChange={() => toggleLanguageVisibility(language)}
+                                            />
+                                            {language}
+                                        </label>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 };
