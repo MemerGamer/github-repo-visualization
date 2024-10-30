@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import cytoscape from 'cytoscape';
 
@@ -10,17 +11,41 @@ interface Repository {
 }
 
 const GitHubUserSearch: React.FC = () => {
-    const [username, setUsername] = useState<string>('');
+    const { usernameParam, layoutParam } = useParams<{ usernameParam: string; layoutParam: string }>();
+    const navigate = useNavigate();
+    const [username, setUsername] = useState<string>(usernameParam || '');
     const [repositories, setRepositories] = useState<Repository[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [layout, setLayout] = useState<string>('grid');
+    const [layout, setLayout] = useState<string>(layoutParam || 'grid');
     const cyRef = useRef<HTMLDivElement>(null);
     const [techColors, setTechColors] = useState<Map<string, string>>(new Map());
     const [languageUsage, setLanguageUsage] = useState<Map<string, number>>(new Map());
     const [hiddenLanguages, setHiddenLanguages] = useState<Set<string>>(new Set());
     const usedColors = useRef<Set<string>>(new Set());
 
-    const handleSearch = async () => {
+    const getRandomColor = useCallback(() => {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }, []);
+
+    const getRandomUniqueColor = useCallback(() => {
+        let color;
+        do {
+            color = getRandomColor();
+        } while (usedColors.current.has(color));
+        usedColors.current.add(color);
+        return color;
+    }, [getRandomColor]);
+
+    const updateRoute = useCallback(() => {
+        navigate(`/${username}/${layout}`);
+    }, [navigate, username, layout]);
+
+    const handleSearch = useCallback(async () => {
         setError(null);
         setRepositories([]);
         setLanguageUsage(new Map());
@@ -88,29 +113,18 @@ const GitHubUserSearch: React.FC = () => {
             });
             setTechColors(colors);
 
+            updateRoute();
         } catch (error) {
             setError('Error fetching repositories or technologies.');
             console.error(error);
         }
-    };
+    }, [username, updateRoute, getRandomUniqueColor]);
 
-    const getRandomUniqueColor = () => {
-        let color;
-        do {
-            color = getRandomColor();
-        } while (usedColors.current.has(color));
-        usedColors.current.add(color);
-        return color;
-    };
-
-    const getRandomColor = () => {
-        const letters = '0123456789ABCDEF';
-        let color = '#';
-        for (let i = 0; i < 6; i++) {
-            color += letters[Math.floor(Math.random() * 16)];
+    useEffect(() => {
+        if (usernameParam) {
+            handleSearch();
         }
-        return color;
-    };
+    }, [usernameParam, handleSearch]);
 
     useEffect(() => {
         if (repositories.length === 0 || !cyRef.current) return;
@@ -236,6 +250,12 @@ const GitHubUserSearch: React.FC = () => {
         });
     };
 
+    const handleShare = () => {
+        const currentUrl = `${window.location.origin}/${username}/${layout}`;
+        navigator.clipboard.writeText(`<iframe src="${currentUrl}" width="600" height="400"></iframe>`);
+        alert('Link copied to clipboard!');
+    };
+
     return (
         <div className="flex flex-col items-center p-6 h-screen w-screen bg-gray-900 transition-colors duration-300">
             <div className="flex justify-center w-full max-w-lg mb-4">
@@ -258,7 +278,10 @@ const GitHubUserSearch: React.FC = () => {
                 <select
                     title='layout-select'
                     value={layout}
-                    onChange={(e) => setLayout(e.target.value)}
+                    onChange={(e) => {
+                        setLayout(e.target.value);
+                        updateRoute();
+                    }}
                     className="ml-2 p-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200"
                 >
                     <option value="grid">Grid</option>
@@ -267,6 +290,12 @@ const GitHubUserSearch: React.FC = () => {
                     <option value="concentric">Concentric</option>
                     <option value="circle">Circle</option>
                 </select>
+                <button
+                    onClick={handleShare}
+                    className="ml-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                >
+                    Share
+                </button>
             </div>
 
             {error && <p className="mt-4 text-red-400">{error}</p>}
