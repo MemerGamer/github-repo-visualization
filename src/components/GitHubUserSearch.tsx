@@ -253,15 +253,15 @@ const GitHubUserSearch: React.FC = () => {
 
             {error && <p className="mt-4 text-red-400">{error}</p>}
 
-            <div className="flex w-full h-full">
+            <div className="flex w-full h-[85vh]">
                 <div
                     ref={cyRef}
-                    className="rounded-2xl flex-grow mt-6 h-full bg-gray-800"
+                    className="rounded-2xl flex-grow mtb-6 h-full bg-gray-800"
                     style={{ minHeight: '400px' }}
                 ></div>
 
-                <div className='mt-6'>
-                    <div className="ml-4 text-white max-h-80 bg-gray-800 rounded-xl p-4 overflow-y-auto">
+                <div className='flex flex-col ml-4 w-1/6'>
+                    <div className="text-white h-1/2 bg-gray-800 rounded-xl p-4 overflow-y-auto">
                         <h2 className="text-lg mb-2">Technologies <br></br> (Nr. of repos using):</h2>
                         <ul>
                             {Array.from(techColors.entries()).map(([tech, color]) => (
@@ -271,7 +271,7 @@ const GitHubUserSearch: React.FC = () => {
                             ))}
                         </ul>
                     </div>
-                    <div className="ml-4 mt-4 text-white max-h-80 bg-gray-800 rounded-xl p-4 overflow-y-auto">
+                    <div className="text-white h-1/2 bg-gray-800 rounded-xl p-4 overflow-y-auto mt-4">
                         <h2 className="text-lg mt-4 mb-2">Hide Languages:</h2>
                         <ul>
                             {Array.from(languageUsage.keys()).map((language) => (
