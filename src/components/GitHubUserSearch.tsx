@@ -6,6 +6,7 @@ interface Repository {
     name: string;
     languages: string[];
     commits: number;
+    url: string;
 }
 
 const GitHubUserSearch: React.FC = () => {
@@ -58,6 +59,7 @@ const GitHubUserSearch: React.FC = () => {
                         name: repo.name,
                         languages,
                         commits,
+                        url: repo.html_url
                     };
                 })
             );
@@ -91,7 +93,8 @@ const GitHubUserSearch: React.FC = () => {
                 data: {
                     id: repo.name,
                     label: `${repo.name}\n\nCommits: ${repo.commits}\nNr. of languages: ${repo.languages.length}`,
-                    size
+                    size,
+                    url: repo.url
                 },
             });
 
@@ -140,7 +143,7 @@ const GitHubUserSearch: React.FC = () => {
                         'font-size': '12px',
                         width: 'data(size)',
                         height: 'data(size)',
-                        opacity: 1  // Start with full opacity
+                        opacity: 1
                     },
                 },
                 {
@@ -154,7 +157,7 @@ const GitHubUserSearch: React.FC = () => {
                         'text-background-color': '#fff',
                         'text-background-opacity': 1,
                         'text-background-shape': 'roundrectangle',
-                        opacity: 1  // Start with full opacity
+                        opacity: 1
                     },
                 },
                 ...Array.from(colors.entries()).map(([tech, color]) => ({
@@ -188,9 +191,17 @@ const GitHubUserSearch: React.FC = () => {
             cy.elements().style({ opacity: 1 });
         });
 
+        // Double-click event to open repository
+        cy.on('dblclick', 'node', (event) => {
+            const node = event.target;
+            const url = node.data('url');
+            if (url) {
+                window.open(url, '_blank');
+            }
+        });
+
         return () => cy.destroy();
     }, [repositories, layout]);
-
 
     return (
         <div className="flex flex-col items-center p-6 h-screen w-screen bg-gray-900 transition-colors duration-300">
