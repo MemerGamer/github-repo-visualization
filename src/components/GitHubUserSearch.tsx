@@ -10,11 +10,11 @@ import SkeletonLoader from './SkeletonLoader';
 const GitHubUserSearch: React.FC = () => {
     const navigate = useNavigate();
     const { usernameParam, layoutParam } = useParams();
-    
+
     // Separate input for controlled component
     const [inputUsername, setInputUsername] = useState<string>(usernameParam || '');
     const [username, setUsername] = useState<string>(usernameParam || ''); // Used for triggering searches
-    
+
     const [repositories, setRepositories] = useState<Repository[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [layout, setLayout] = useState<string>(layoutParam || 'grid');
@@ -93,15 +93,32 @@ const GitHubUserSearch: React.FC = () => {
                     );
                     const languages = Object.keys(languagesResponse.data);
 
-                    const commitsResponse = await axios.get(
-                        `${import.meta.env.VITE_GITHUB_API_URL}/repos/${username}/${repo.name}/commits`,
-                        {
-                            headers: {
-                                Authorization: `Bearer ${import.meta.env.VITE_GITHUB_API_KEY}`,
-                            },
+                    let commits = 0;
+                    try {
+                        // Request for 1 commit per page to get the pagination info
+                        const commitsResponse = await axios.get(
+                            `${import.meta.env.VITE_GITHUB_API_URL}/repos/${username}/${repo.name}/commits?per_page=1&page=1`,
+                            {
+                                headers: {
+                                    Authorization: `Bearer ${import.meta.env.VITE_GITHUB_API_KEY}`,
+                                },
+                            }
+                        );
+
+                        // Parse the `Link` header to get the last page number
+                        const linkHeader = commitsResponse.headers.link;
+                        if (linkHeader) {
+                            const match = linkHeader.match(/&page=(\d+)>; rel="last"/);
+                            if (match && match[1]) {
+                                commits = parseInt(match[1], 10);
+                            }
+                        } else {
+                            // If no Link header, assume only one page of commits
+                            commits = 1;
                         }
-                    );
-                    const commits = commitsResponse.data.length;
+                    } catch (commitError) {
+                        console.error(`Error fetching commit count for ${repo.name}:`, commitError);
+                    }
 
                     languages.forEach((language) => {
                         setLanguageUsage((prev) => {
@@ -140,6 +157,7 @@ const GitHubUserSearch: React.FC = () => {
             setTimeout(() => setLoading(false), 300);
         }
     }, [username, updateRoute, getRandomUniqueColor]);
+
 
     useEffect(() => {
         if (usernameParam) {

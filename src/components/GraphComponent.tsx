@@ -16,7 +16,8 @@ const GraphComponent: React.FC<{
         const techMap = new Map<string, string[]>();
 
         repositories.forEach((repo) => {
-            const size = repo.commits * 2 + repo.languages.length * 10 + 20;
+            // The size of the nodes should scale less when the number of commits is high
+            const size = Math.log1p(repo.commits)*10 + repo.languages.length * 10 + 20;
             elements.push({
                 data: {
                     id: repo.name,
