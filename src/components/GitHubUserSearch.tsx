@@ -13,11 +13,14 @@ const GitHubUserSearch: React.FC = () => {
     const [username, setUsername] = useState<string>('');
     const [repositories, setRepositories] = useState<Repository[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [layout, setLayout] = useState<string>('cose');
+    const [layout, setLayout] = useState<string>('grid');
     const cyRef = useRef<HTMLDivElement>(null);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [techColors, setTechColors] = useState<Map<string, string>>(new Map());
     const [languageUsage, setLanguageUsage] = useState<Map<string, number>>(new Map());
     const [hiddenLanguages, setHiddenLanguages] = useState<Set<string>>(new Set());
+
+
 
     const handleSearch = async () => {
         setError(null);
@@ -86,7 +89,6 @@ const GitHubUserSearch: React.FC = () => {
 
         const elements: cytoscape.ElementDefinition[] = [];
         const techMap = new Map<string, string[]>();
-        const colors = new Map<string, string>();
 
         const getRandomColor = () => {
             const letters = '0123456789ABCDEF';
@@ -111,13 +113,13 @@ const GitHubUserSearch: React.FC = () => {
             repo.languages.forEach((tech) => {
                 if (!techMap.has(tech)) {
                     techMap.set(tech, []);
-                    colors.set(tech, getRandomColor());
+                    if (!techColors.has(tech)) {
+                        techColors.set(tech, getRandomColor());
+                    }
                 }
                 techMap.get(tech)!.push(repo.name);
             });
         });
-
-        setTechColors(colors);
 
         techMap.forEach((repos, tech) => {
             if (repos.length > 1 && !hiddenLanguages.has(tech)) {
@@ -170,7 +172,7 @@ const GitHubUserSearch: React.FC = () => {
                         opacity: 1
                     },
                 },
-                ...Array.from(colors.entries()).map(([tech, color]) => ({
+                ...Array.from(techColors.entries()).map(([tech, color]) => ({
                     selector: `edge.${tech}`,
                     style: {
                         'line-color': color,
@@ -204,7 +206,7 @@ const GitHubUserSearch: React.FC = () => {
         });
 
         return () => cy.destroy();
-    }, [repositories, layout, hiddenLanguages]);
+    }, [repositories, layout, hiddenLanguages, techColors]);
 
     const toggleLanguageVisibility = (language: string) => {
         setHiddenLanguages((prev) => {
@@ -243,8 +245,8 @@ const GitHubUserSearch: React.FC = () => {
                     onChange={(e) => setLayout(e.target.value)}
                     className="ml-2 p-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200"
                 >
-                    <option value="cose">Cose</option>
                     <option value="grid">Grid</option>
+                    <option value="cose">Cose</option>
                     <option value="breadthfirst">Breadthfirst</option>
                     <option value="concentric">Concentric</option>
                     <option value="circle">Circle</option>
