@@ -11,14 +11,13 @@ const GitHubUserSearch: React.FC = () => {
     const navigate = useNavigate();
     const { usernameParam, layoutParam } = useParams();
 
-    // Separate input for controlled component
     const [inputUsername, setInputUsername] = useState<string>(usernameParam || '');
-    const [username, setUsername] = useState<string>(usernameParam || ''); // Used for triggering searches
+    const [username, setUsername] = useState<string>(usernameParam || '');
 
     const [repositories, setRepositories] = useState<Repository[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [layout, setLayout] = useState<string>(layoutParam || 'grid');
-    const [loading, setLoading] = useState<boolean>(true);
+    const [loading, setLoading] = useState<boolean>(false);
     const cyRef = useRef<HTMLDivElement>(null);
     const [techColors, setTechColors] = useState<Map<string, string>>(new Map());
     const [languageUsage, setLanguageUsage] = useState<Map<string, number>>(new Map());
@@ -59,20 +58,15 @@ const GitHubUserSearch: React.FC = () => {
         navigate(`/${username}/${layout}`);
     }, [navigate, username, layout]);
 
-    const handleSearch = useCallback(async () => {
+    const fetchRepositories = useCallback(async (user: string) => {
+        setLoading(true);
         setError(null);
         setRepositories([]);
         setLanguageUsage(new Map());
-        setLoading(true);
-
-        if (!username) {
-            setLoading(false);
-            return;
-        }
 
         try {
             const reposResponse = await axios.get(
-                `${import.meta.env.VITE_GITHUB_API_URL}/users/${username}/repos`,
+                `${import.meta.env.VITE_GITHUB_API_URL}/users/${user}/repos`,
                 {
                     headers: {
                         Authorization: `Bearer ${import.meta.env.VITE_GITHUB_API_KEY}`,
@@ -84,7 +78,7 @@ const GitHubUserSearch: React.FC = () => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 reposResponse.data.map(async (repo: any) => {
                     const languagesResponse = await axios.get(
-                        `${import.meta.env.VITE_GITHUB_API_URL}/repos/${username}/${repo.name}/languages`,
+                        `${import.meta.env.VITE_GITHUB_API_URL}/repos/${user}/${repo.name}/languages`,
                         {
                             headers: {
                                 Authorization: `Bearer ${import.meta.env.VITE_GITHUB_API_KEY}`,
@@ -95,9 +89,8 @@ const GitHubUserSearch: React.FC = () => {
 
                     let commits = 0;
                     try {
-                        // Request for 1 commit per page to get the pagination info
                         const commitsResponse = await axios.get(
-                            `${import.meta.env.VITE_GITHUB_API_URL}/repos/${username}/${repo.name}/commits?per_page=1&page=1`,
+                            `${import.meta.env.VITE_GITHUB_API_URL}/repos/${user}/${repo.name}/commits?per_page=1&page=1`,
                             {
                                 headers: {
                                     Authorization: `Bearer ${import.meta.env.VITE_GITHUB_API_KEY}`,
@@ -105,7 +98,6 @@ const GitHubUserSearch: React.FC = () => {
                             }
                         );
 
-                        // Parse the `Link` header to get the last page number
                         const linkHeader = commitsResponse.headers.link;
                         if (linkHeader) {
                             const match = linkHeader.match(/&page=(\d+)>; rel="last"/);
@@ -113,7 +105,6 @@ const GitHubUserSearch: React.FC = () => {
                                 commits = parseInt(match[1], 10);
                             }
                         } else {
-                            // If no Link header, assume only one page of commits
                             commits = 1;
                         }
                     } catch (commitError) {
@@ -149,30 +140,35 @@ const GitHubUserSearch: React.FC = () => {
             });
             setTechColors(colors);
 
-            updateRoute();
         } catch (error) {
             setError('Error fetching repositories or technologies.');
             console.error(error);
         } finally {
-            setTimeout(() => setLoading(false), 300);
+            setLoading(false);
         }
-    }, [username, updateRoute, getRandomUniqueColor]);
-
+    },[getRandomUniqueColor]);
 
     useEffect(() => {
         if (usernameParam) {
-            handleSearch();
+            fetchRepositories(usernameParam);
         }
-    }, [usernameParam, handleSearch]);
+    }, [fetchRepositories, usernameParam]);
+
+    const handleSearch = () => {
+        if (inputUsername && inputUsername !== username) {
+            setUsername(inputUsername);
+            fetchRepositories(inputUsername);
+        }
+    };
 
     return (
         <div className="flex flex-col items-center p-6 h-screen w-screen bg-gray-900 transition-colors duration-300">
             <SearchBar
                 username={inputUsername}
-                setUsername={setInputUsername}  // use inputUsername here to track changes without triggering search
+                setUsername={setInputUsername}
                 layout={layout}
-                setLayout={setLayout}
-                handleSearch={() => setUsername(inputUsername)} // only update username on search
+                setLayout={setLayout} // Change layout without fetching
+                handleSearch={handleSearch}
                 updateRoute={updateRoute}
             />
             {error && <p className="mt-4 text-red-400">{error}</p>}
