@@ -1,14 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import cytoscape from 'cytoscape';
-
-interface Repository {
-    name: string;
-    languages: string[];
-    commits: number;
-    url: string;
-}
+import { Repository } from '../types';
+import GraphComponent from './GraphComponent';
+import SearchBar from './SearchBar';
+import LanguageListComponent from './LanguageListComponent';
+import SkeletonLoader from './SkeletonLoader';
 
 const GitHubUserSearch: React.FC = () => {
     const { usernameParam, layoutParam } = useParams<{ usernameParam: string; layoutParam: string }>();
@@ -32,6 +29,18 @@ const GitHubUserSearch: React.FC = () => {
         }
         return color;
     }, []);
+
+    const toggleLanguageVisibility = (language: string) => {
+        setHiddenLanguages((prev) => {
+            const newSet = new Set(prev);
+            if (newSet.has(language)) {
+                newSet.delete(language);
+            } else {
+                newSet.add(language);
+            }
+            return newSet;
+        });
+    };
 
     const getRandomUniqueColor = useCallback(() => {
         let color;
@@ -133,221 +142,34 @@ const GitHubUserSearch: React.FC = () => {
         }
     }, [usernameParam, handleSearch]);
 
-    useEffect(() => {
-        if (repositories.length === 0 || !cyRef.current) return;
-
-        const elements: cytoscape.ElementDefinition[] = [];
-        const techMap = new Map<string, string[]>();
-
-        repositories.forEach((repo) => {
-            const size = repo.commits * 2 + repo.languages.length * 10 + 20;
-            elements.push({
-                data: {
-                    id: repo.name,
-                    label: `${repo.name}\n\nCommits: ${repo.commits}\nNr. of languages: ${repo.languages.length}`,
-                    size,
-                    url: repo.url
-                },
-            });
-
-            repo.languages.forEach((tech) => {
-                if (!techMap.has(tech)) {
-                    techMap.set(tech, []);
-                }
-                techMap.get(tech)!.push(repo.name);
-            });
-        });
-
-        techMap.forEach((repos, tech) => {
-            if (repos.length > 1 && !hiddenLanguages.has(tech)) {
-                for (let i = 0; i < repos.length; i++) {
-                    for (let j = i + 1; j < repos.length; j++) {
-                        elements.push({
-                            data: {
-                                id: `${repos[i]}-${repos[j]}`,
-                                source: repos[i],
-                                target: repos[j],
-                                label: tech,
-                            },
-                            classes: tech,
-                        });
-                    }
-                }
-            }
-        });
-
-        const cy = cytoscape({
-            container: cyRef.current,
-            elements,
-            style: [
-                {
-                    selector: 'node',
-                    style: {
-                        'background-color': '#007acc',
-                        label: 'data(label)',
-                        'text-valign': 'center',
-                        'text-wrap': 'wrap',
-                        'text-max-width': '100px',
-                        color: '#fff',
-                        'font-size': '12px',
-                        width: 'data(size)',
-                        height: 'data(size)',
-                        opacity: 1
-                    },
-                },
-                {
-                    selector: 'edge',
-                    style: {
-                        width: 1,
-                        'line-color': '#ddd',
-                        'curve-style': 'unbundled-bezier',
-                        label: 'data(label)',
-                        'font-size': '10px',
-                        'text-background-color': '#fff',
-                        'text-background-opacity': 1,
-                        'text-background-shape': 'roundrectangle',
-                        opacity: 1
-                    },
-                },
-                ...Array.from(techColors.entries()).map(([tech, color]) => ({
-                    selector: `edge.${tech}`,
-                    style: {
-                        'line-color': color,
-                        'text-background-color': color,
-                    },
-                })),
-            ],
-            layout: {
-                name: layout,
-            },
-        });
-
-        cy.on('mouseover', 'node', (event) => {
-            const node = event.target;
-            cy.elements().not(node).not(node.connectedEdges()).style({ opacity: 0.1 });
-            node.style({ opacity: 1 });
-            node.connectedEdges().style({ opacity: 1 });
-            node.connectedEdges().connectedNodes().style({ opacity: 1 });
-        });
-
-        cy.on('mouseout', 'node', () => {
-            cy.elements().style({ opacity: 1 });
-        });
-
-        cy.on('dblclick', 'node', (event) => {
-            const node = event.target;
-            const url = node.data('url');
-            if (url) {
-                window.open(url, '_blank');
-            }
-        });
-
-        return () => cy.destroy();
-    }, [repositories, layout, hiddenLanguages, techColors]);
-
-    const toggleLanguageVisibility = (language: string) => {
-        setHiddenLanguages((prev) => {
-            const newSet = new Set(prev);
-            if (newSet.has(language)) {
-                newSet.delete(language);
-            } else {
-                newSet.add(language);
-            }
-            return newSet;
-        });
-    };
-
-    const handleShare = () => {
-        const currentUrl = `${window.location.origin}/${username}/${layout}`;
-        navigator.clipboard.writeText(`<iframe src="${currentUrl}" width="600" height="400"></iframe>`);
-        alert('Link copied to clipboard!');
-    };
-
     return (
         <div className="flex flex-col items-center p-6 h-screen w-screen bg-gray-900 transition-colors duration-300">
-            <div className="flex justify-center w-full max-w-lg mb-4">
-                <h1 className='text-white text-lg align-middle justify-center p-2'>GitHub Username:</h1>
-                <input
-                    type="text"
-                    placeholder="Enter GitHub username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="p-2 border border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-800 text-gray-200"
-                />
-                <button
-                    onClick={handleSearch}
-                    className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                >
-                    Search
-                </button>
-
-                <h1 className='text-white text-lg align-middle justify-center p-2'>Graph Layout:</h1>
-                <select
-                    title='layout-select'
-                    value={layout}
-                    onChange={(e) => {
-                        setLayout(e.target.value);
-                        updateRoute();
-                    }}
-                    className="ml-2 p-2 border border-gray-700 rounded-lg bg-gray-800 text-gray-200"
-                >
-                    <option value="grid">Grid</option>
-                    <option value="cose">Cose</option>
-                    <option value="breadthfirst">Breadthfirst</option>
-                    <option value="concentric">Concentric</option>
-                    <option value="circle">Circle</option>
-                </select>
-                <button
-                    onClick={handleShare}
-                    className="ml-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-                >
-                    Share
-                </button>
-            </div>
-
+            <SearchBar
+                username={username}
+                setUsername={setUsername}
+                layout={layout}
+                setLayout={setLayout}
+                handleSearch={handleSearch}
+                updateRoute={updateRoute}
+            />
             {error && <p className="mt-4 text-red-400">{error}</p>}
-
             {loading ? (
-                <div className="flex w-full h-[85vh] justify-center items-center">
-                    <div className="w-16 h-16 border-4 border-blue-500 border-dotted rounded-full animate-spin"></div>
-                </div>
+                <SkeletonLoader />
             ) : (
                 <div className="flex w-full h-[85vh]">
-                    <div
-                        ref={cyRef}
-                        className="rounded-2xl flex-grow mtb-6 h-full bg-gray-800"
-                        style={{ minHeight: '400px' }}
-                    ></div>
-
-                    <div className='flex flex-col ml-4 w-1/6'>
-                        <div className="text-white h-1/2 bg-gray-800 rounded-xl p-4 overflow-y-auto">
-                            <h2 className="text-lg mb-2">Languages <br></br> (Nr. of repos using):</h2>
-                            <ul>
-                                {Array.from(techColors.entries()).map(([tech, color]) => (
-                                    <li key={tech} style={{ color }}>
-                                        {tech} ({languageUsage.get(tech) || 0})
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                        <div className="text-white h-1/2 bg-gray-800 rounded-xl p-4 overflow-y-auto mt-4">
-                            <h2 className="text-lg mt-4 mb-2">Hide Languages:</h2>
-                            <ul>
-                                {Array.from(languageUsage.keys()).map((language) => (
-                                    <li key={language}>
-                                        <label>
-                                            <input
-                                                type="checkbox"
-                                                checked={hiddenLanguages.has(language)}
-                                                onChange={() => toggleLanguageVisibility(language)}
-                                            />
-                                            {language}
-                                        </label>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    </div>
+                    <GraphComponent
+                        repositories={repositories}
+                        layout={layout}
+                        cyRef={cyRef}
+                        techColors={techColors}
+                        hiddenLanguages={hiddenLanguages}
+                    />
+                    <LanguageListComponent
+                        techColors={techColors}
+                        languageUsage={languageUsage}
+                        hiddenLanguages={hiddenLanguages}
+                        toggleLanguageVisibility={toggleLanguageVisibility}
+                    />
                 </div>
             )}
         </div>
