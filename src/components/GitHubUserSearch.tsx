@@ -17,6 +17,7 @@ const GitHubUserSearch: React.FC = () => {
     const cyRef = useRef<HTMLDivElement>(null);
     const [techColors, setTechColors] = useState<Map<string, string>>(new Map());
     const [languageUsage, setLanguageUsage] = useState<Map<string, number>>(new Map());
+    const [hiddenLanguages, setHiddenLanguages] = useState<Set<string>>(new Set());
 
     const handleSearch = async () => {
         setError(null);
@@ -119,7 +120,7 @@ const GitHubUserSearch: React.FC = () => {
         setTechColors(colors);
 
         techMap.forEach((repos, tech) => {
-            if (repos.length > 1) {
+            if (repos.length > 1 && !hiddenLanguages.has(tech)) {
                 for (let i = 0; i < repos.length; i++) {
                     for (let j = i + 1; j < repos.length; j++) {
                         elements.push({
@@ -203,7 +204,19 @@ const GitHubUserSearch: React.FC = () => {
         });
 
         return () => cy.destroy();
-    }, [repositories, layout]);
+    }, [repositories, layout, hiddenLanguages]);
+
+    const toggleLanguageVisibility = (language: string) => {
+        setHiddenLanguages((prev) => {
+            const newSet = new Set(prev);
+            if (newSet.has(language)) {
+                newSet.delete(language);
+            } else {
+                newSet.add(language);
+            }
+            return newSet;
+        });
+    };
 
     return (
         <div className="flex flex-col items-center p-6 h-screen w-screen bg-gray-900 transition-colors duration-300">
@@ -240,22 +253,42 @@ const GitHubUserSearch: React.FC = () => {
 
             {error && <p className="mt-4 text-red-400">{error}</p>}
 
-            <div
-                ref={cyRef}
-                className="rounded-2xl flex-grow w-full mt-6 h-full bg-gray-800"
-                style={{ minHeight: '400px' }}
-            ></div>
+            <div className="flex w-full h-full">
+                <div
+                    ref={cyRef}
+                    className="rounded-2xl flex-grow mt-6 h-full bg-gray-800"
+                    style={{ minHeight: '400px' }}
+                ></div>
 
-            {/* Put on top of the graph and align to the right */}
-            <div className="absolute top-28 right-0 mt-4 mr-4 text-white max-h-96 bg-gray-900 bg-opacity-75 rounded-xl p-2 overflow-y-auto">
-                <h2 className="text-lg mb-2">Technologies <br></br> (Nr. of repos using):</h2>
-                <ul>
-                    {Array.from(techColors.entries()).map(([tech, color]) => (
-                        <li key={tech} style={{ color }}>
-                            {tech} ({languageUsage.get(tech) || 0})
-                        </li>
-                    ))}
-                </ul>
+                <div className='mt-6'>
+                    <div className="ml-4 text-white max-h-80 bg-gray-800 rounded-xl p-4 overflow-y-auto">
+                        <h2 className="text-lg mb-2">Technologies <br></br> (Nr. of repos using):</h2>
+                        <ul>
+                            {Array.from(techColors.entries()).map(([tech, color]) => (
+                                <li key={tech} style={{ color }}>
+                                    {tech} ({languageUsage.get(tech) || 0})
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                    <div className="ml-4 mt-4 text-white max-h-80 bg-gray-800 rounded-xl p-4 overflow-y-auto">
+                        <h2 className="text-lg mt-4 mb-2">Hide Languages:</h2>
+                        <ul>
+                            {Array.from(languageUsage.keys()).map((language) => (
+                                <li key={language}>
+                                    <label>
+                                        <input
+                                            type="checkbox"
+                                            checked={hiddenLanguages.has(language)}
+                                            onChange={() => toggleLanguageVisibility(language)}
+                                        />
+                                        {language}
+                                    </label>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     );
