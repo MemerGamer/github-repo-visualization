@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom'; // import useParams for URL params
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Repository } from '../types';
 import GraphComponent from './GraphComponent';
@@ -9,11 +9,15 @@ import SkeletonLoader from './SkeletonLoader';
 
 const GitHubUserSearch: React.FC = () => {
     const navigate = useNavigate();
-    const { usernameParam, layoutParam } = useParams(); // Retrieve parameters from URL
-    const [username, setUsername] = useState<string>(usernameParam || ''); // Initialize with URL username
+    const { usernameParam, layoutParam } = useParams();
+    
+    // Separate input for controlled component
+    const [inputUsername, setInputUsername] = useState<string>(usernameParam || '');
+    const [username, setUsername] = useState<string>(usernameParam || ''); // Used for triggering searches
+    
     const [repositories, setRepositories] = useState<Repository[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [layout, setLayout] = useState<string>(layoutParam || 'grid'); // Initialize with URL layout
+    const [layout, setLayout] = useState<string>(layoutParam || 'grid');
     const [loading, setLoading] = useState<boolean>(false);
     const cyRef = useRef<HTMLDivElement>(null);
     const [techColors, setTechColors] = useState<Map<string, string>>(new Map());
@@ -60,6 +64,7 @@ const GitHubUserSearch: React.FC = () => {
         setRepositories([]);
         setLanguageUsage(new Map());
         setLoading(true);
+
         if (!username) {
             setLoading(false);
             return;
@@ -109,7 +114,7 @@ const GitHubUserSearch: React.FC = () => {
                         name: repo.name,
                         languages,
                         commits,
-                        url: repo.html_url
+                        url: repo.html_url,
                     };
                 })
             );
@@ -132,25 +137,24 @@ const GitHubUserSearch: React.FC = () => {
             setError('Error fetching repositories or technologies.');
             console.error(error);
         } finally {
-            setLoading(false);
+            setTimeout(() => setLoading(false), 300);
         }
     }, [username, updateRoute, getRandomUniqueColor]);
 
-    // Trigger the search when the component mounts if usernameParam is present
     useEffect(() => {
         if (usernameParam) {
-            handleSearch(); // Call handleSearch to fetch data based on URL param
+            handleSearch();
         }
     }, [usernameParam, handleSearch]);
 
     return (
         <div className="flex flex-col items-center p-6 h-screen w-screen bg-gray-900 transition-colors duration-300">
             <SearchBar
-                username={username}
-                setUsername={setUsername}
+                username={inputUsername}
+                setUsername={setInputUsername}  // use inputUsername here to track changes without triggering search
                 layout={layout}
                 setLayout={setLayout}
-                handleSearch={handleSearch}
+                handleSearch={() => setUsername(inputUsername)} // only update username on search
                 updateRoute={updateRoute}
             />
             {error && <p className="mt-4 text-red-400">{error}</p>}
