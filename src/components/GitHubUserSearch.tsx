@@ -16,10 +16,12 @@ const GitHubUserSearch: React.FC = () => {
     const [layout, setLayout] = useState<string>('cose');
     const cyRef = useRef<HTMLDivElement>(null);
     const [techColors, setTechColors] = useState<Map<string, string>>(new Map());
+    const [languageUsage, setLanguageUsage] = useState<Map<string, number>>(new Map());
 
     const handleSearch = async () => {
         setError(null);
         setRepositories([]);
+        setLanguageUsage(new Map());
         if (!username) return;
 
         try {
@@ -54,6 +56,13 @@ const GitHubUserSearch: React.FC = () => {
                         }
                     );
                     const commits = commitsResponse.data.length;
+
+                    languages.forEach((language) => {
+                        setLanguageUsage((prev) => {
+                            const newCount = (prev.get(language) || 0) + 1;
+                            return new Map(prev).set(language, newCount);
+                        });
+                    });
 
                     return {
                         name: repo.name,
@@ -173,25 +182,18 @@ const GitHubUserSearch: React.FC = () => {
             },
         });
 
-        // Mouseover and Mouseout Events
         cy.on('mouseover', 'node', (event) => {
             const node = event.target;
-
-            // Dim all other nodes and edges
             cy.elements().not(node).not(node.connectedEdges()).style({ opacity: 0.1 });
-
-            // Highlight the selected node and its edges
             node.style({ opacity: 1 });
             node.connectedEdges().style({ opacity: 1 });
             node.connectedEdges().connectedNodes().style({ opacity: 1 });
         });
 
         cy.on('mouseout', 'node', () => {
-            // Reset all elements to full opacity
             cy.elements().style({ opacity: 1 });
         });
 
-        // Double-click event to open repository
         cy.on('dblclick', 'node', (event) => {
             const node = event.target;
             const url = node.data('url');
@@ -246,11 +248,11 @@ const GitHubUserSearch: React.FC = () => {
 
             {/* Put on top of the graph and align to the right */}
             <div className="absolute top-28 right-0 mt-4 mr-4 text-white max-h-96 bg-gray-900 bg-opacity-75 rounded-xl p-2 overflow-y-auto">
-                <h2 className="text-lg mb-2">Legend:</h2>
+                <h2 className="text-lg mb-2">Technologies <br></br> (Nr. of repos using):</h2>
                 <ul>
                     {Array.from(techColors.entries()).map(([tech, color]) => (
                         <li key={tech} style={{ color }}>
-                            {tech}
+                            {tech} ({languageUsage.get(tech) || 0})
                         </li>
                     ))}
                 </ul>
