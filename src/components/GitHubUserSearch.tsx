@@ -15,12 +15,9 @@ const GitHubUserSearch: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [layout, setLayout] = useState<string>('grid');
     const cyRef = useRef<HTMLDivElement>(null);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [techColors, setTechColors] = useState<Map<string, string>>(new Map());
     const [languageUsage, setLanguageUsage] = useState<Map<string, number>>(new Map());
     const [hiddenLanguages, setHiddenLanguages] = useState<Set<string>>(new Set());
-
-
 
     const handleSearch = async () => {
         setError(null);
@@ -78,10 +75,31 @@ const GitHubUserSearch: React.FC = () => {
             );
 
             setRepositories(repoData);
+
+            // Set tech colors after repositories are fetched
+            const colors = new Map<string, string>();
+            repoData.forEach((repo) => {
+                repo.languages.forEach((tech) => {
+                    if (!colors.has(tech)) {
+                        colors.set(tech, getRandomColor());
+                    }
+                });
+            });
+            setTechColors(colors);
+
         } catch (error) {
             setError('Error fetching repositories or technologies.');
             console.error(error);
         }
+    };
+
+    const getRandomColor = () => {
+        const letters = '0123456789ABCDEF';
+        let color = '#';
+        for (let i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
     };
 
     useEffect(() => {
@@ -89,15 +107,6 @@ const GitHubUserSearch: React.FC = () => {
 
         const elements: cytoscape.ElementDefinition[] = [];
         const techMap = new Map<string, string[]>();
-
-        const getRandomColor = () => {
-            const letters = '0123456789ABCDEF';
-            let color = '#';
-            for (let i = 0; i < 6; i++) {
-                color += letters[Math.floor(Math.random() * 16)];
-            }
-            return color;
-        };
 
         repositories.forEach((repo) => {
             const size = repo.commits * 2 + repo.languages.length * 10 + 20;
@@ -113,9 +122,6 @@ const GitHubUserSearch: React.FC = () => {
             repo.languages.forEach((tech) => {
                 if (!techMap.has(tech)) {
                     techMap.set(tech, []);
-                    if (!techColors.has(tech)) {
-                        techColors.set(tech, getRandomColor());
-                    }
                 }
                 techMap.get(tech)!.push(repo.name);
             });
