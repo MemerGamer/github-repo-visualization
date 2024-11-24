@@ -8,32 +8,34 @@ const GraphComponent: React.FC<{
     cyRef: React.RefObject<HTMLDivElement>;
     techColors: Map<string, string>;
     hiddenLanguages: Set<string>;
-}> = ({ repositories, layout, cyRef, techColors, hiddenLanguages }) => {
+    hiddenForks: boolean;
+}> = ({ repositories, layout, cyRef, techColors, hiddenLanguages, hiddenForks }) => {
     useEffect(() => {
         if (repositories.length === 0 || !cyRef.current) return;
 
         const elements: cytoscape.ElementDefinition[] = [];
         const techMap = new Map<string, string[]>();
 
-        repositories.forEach((repo) => {
-            // The size of the nodes should scale less when the number of commits is high
-            const size = Math.log1p(repo.commits)*10 + repo.languages.length * 10 + 20;
-            elements.push({
-                data: {
-                    id: repo.name,
-                    label: `${repo.name}\n\nCommits: ${repo.commits}\nNr. of languages: ${repo.languages.length}`,
-                    size,
-                    url: repo.url
-                },
-            });
+        repositories.filter((repo) => !hiddenForks || !repo.fork) // Filter out forks if hiddenForks is true
+            .forEach((repo) => {
+                // The size of the nodes should scale less when the number of commits is high
+                const size = Math.log1p(repo.commits) * 10 + repo.languages.length * 10 + 20;
+                elements.push({
+                    data: {
+                        id: repo.name,
+                        label: `${repo.name}\n\nCommits: ${repo.commits}\nNr. of languages: ${repo.languages.length}`,
+                        size,
+                        url: repo.url
+                    },
+                });
 
-            repo.languages.forEach((tech) => {
-                if (!techMap.has(tech)) {
-                    techMap.set(tech, []);
-                }
-                techMap.get(tech)!.push(repo.name);
+                repo.languages.forEach((tech) => {
+                    if (!techMap.has(tech)) {
+                        techMap.set(tech, []);
+                    }
+                    techMap.get(tech)!.push(repo.name);
+                });
             });
-        });
 
         techMap.forEach((repos, tech) => {
             if (repos.length > 1 && !hiddenLanguages.has(tech)) {
@@ -120,7 +122,7 @@ const GraphComponent: React.FC<{
         });
 
         return () => cy.destroy();
-    }, [repositories, layout, hiddenLanguages, techColors, cyRef]);
+    }, [repositories, layout, hiddenLanguages, techColors, cyRef, hiddenForks]);
 
     return (
         <div

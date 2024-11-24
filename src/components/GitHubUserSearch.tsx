@@ -22,6 +22,7 @@ const GitHubUserSearch: React.FC = () => {
     const [techColors, setTechColors] = useState<Map<string, string>>(new Map());
     const [languageUsage, setLanguageUsage] = useState<Map<string, number>>(new Map());
     const [hiddenLanguages, setHiddenLanguages] = useState<Set<string>>(new Set());
+    const [hiddenForks, setHiddenForks] = useState<boolean>(true);
     const usedColors = useRef<Set<string>>(new Set());
 
     const getRandomColor = useCallback(() => {
@@ -123,6 +124,7 @@ const GitHubUserSearch: React.FC = () => {
                         languages,
                         commits,
                         url: repo.html_url,
+                        fork: repo.fork,
                     };
                 })
             );
@@ -182,12 +184,15 @@ const GitHubUserSearch: React.FC = () => {
                         cyRef={cyRef}
                         techColors={techColors}
                         hiddenLanguages={hiddenLanguages}
+                        hiddenForks={hiddenForks}
                     />
                     <LanguageListComponent
                         techColors={techColors}
                         languageUsage={languageUsage}
                         hiddenLanguages={hiddenLanguages}
                         toggleLanguageVisibility={toggleLanguageVisibility}
+                        hiddenForks={hiddenForks}
+                        toggleForkVisibility={() => setHiddenForks((prev) => !prev)}
                     />
                 </div>
             )}
