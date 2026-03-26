@@ -1,9 +1,13 @@
-interface Repository {
-  name: string;
-  languages: string[];
-  commits: number;
-  url: string;
-  fork: boolean;
+export interface Repository {
+    name: string;
+    languages: string[];
+    commits: number;
+    url: string;
+    fork: boolean;
 }
 
-export type { Repository };
+export interface RawGitHubRepo {
+    name: string;
+    html_url: string;
+    fork: boolean;
+}

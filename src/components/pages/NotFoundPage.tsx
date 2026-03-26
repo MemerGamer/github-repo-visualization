@@ -1,5 +1,6 @@
-import { Link } from "react-router-dom";
-function NotFound() {
+import { Link } from 'react-router-dom';
+
+function NotFoundPage() {
     return (
         <div className="space-y-4 dark:bg-gray-900 overflow-hidden">
             <div className="flex items-center justify-center w-screen h-screen dark:bg-gray-800">
@@ -11,7 +12,7 @@ function NotFound() {
                                 <span className="text-red-500">Oops!</span> Page Not Found
                             </p>
                             <p className="mb-8 text-center text-gray-500 md:text-lg dark:text-white">
-                                The page you’re looking for doesn’t exist.
+                                The page you're looking for doesn't exist.
                             </p>
                             <Link
                                 to="/"
@@ -31,8 +32,7 @@ function NotFound() {
                 </div>
             </div>
         </div>
-
     );
 }
 
-export default NotFound;
+export default NotFoundPage;
